@@ -29,3 +29,5 @@ function NetChannel:RequestToClient(data, user, replyCallback) end
 
 ---@type {[string]: ExtenderNetChannel}
 Channels = {}
+
+Channels.FireAway = Ext.Net.CreateChannel(ModuleUUID, "FireAway")
