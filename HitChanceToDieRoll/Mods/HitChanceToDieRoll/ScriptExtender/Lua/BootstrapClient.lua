@@ -57,11 +57,14 @@ Channels.FireAway:SetHandler(function(_, _)
 				local castSpellProperties = dataContext.ActiveTask:GetProperty("RootCastSpell"):GetAllProperties()
 
 				if hitChanceNode.ShowDescription then
-					local isSingleTargetShout = (castSpellProperties.TargetingType == "Shout" and castSpellProperties.MaxTargets == 1)
 					if (hitNode:GetProperty("Name") == "hitChanceText") then
-						local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
-						hitNode:SetProperty("Text",
-							("DC: %s"):format(tostring(hitChance > 0 and math.floor(math.max(isSingleTargetShout and 1 or 2, (20 - (20 * (hitChance / 100))) + 1) or 20))))
+						if hitChanceNode.TotalHitChance == 100 then
+							hitNode:SetProperty("Text", ("DC: %s"):format(tostring(0)))
+						else
+							local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
+							hitNode:SetProperty("Text",
+								("DC: %s"):format(tostring(hitChance > 0 and math.floor(math.max( 2, (20 - (20 * (hitChance / 100))) + 1)))))
+						end
 					end
 				end
 			elseif tickSub then
