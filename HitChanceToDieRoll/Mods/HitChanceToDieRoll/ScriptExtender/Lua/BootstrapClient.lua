@@ -54,8 +54,6 @@ Channels.FireAway:SetHandler(function(_, _)
 			if dataContext.ActiveTask:GetProperty("RootCastSpell") then
 				local hitChanceNode = dataContext.HitChanceDesc:GetAllProperties()
 
-				local castSpellProperties = dataContext.ActiveTask:GetProperty("RootCastSpell"):GetAllProperties()
-
 				if hitChanceNode.ShowDescription then
 					if (hitNode:GetProperty("Name") == "hitChanceText") then
 						if hitChanceNode.TotalHitChance == 100 then
