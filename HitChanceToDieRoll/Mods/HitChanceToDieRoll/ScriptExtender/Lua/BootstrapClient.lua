@@ -1,36 +1,82 @@
 ---@diagnostic disable: param-type-mismatch, missing-parameter, undefined-field
 Ext.Require("Utilities/Common/_Index.lua")
 Ext.Require("Utilities/Networking/Channels.lua")
-Ext.Require("Utilities/Client/IMGUI/_Index.lua")
 
 Logger:ClearLogFile()
 
----@param entity EntityHandle
----@param componentType ExtComponentType
----@param component SpellCastIsCastingComponent
-local function onSpellCast(entity, componentType, component)
-	if entity.ClientControl and entity.StatusLoseControl == nil then
-		Ext.Entity.OnCreateDeferred("SpellCastAnimationRequest", function()
-			for _, child in ipairs(Ext.UI.GetRoot():Child(1):Child(1):GetAllProperties().Children) do
-				---@cast child UiUIWidget
-				if child.XAMLPath == "Pages/CursorText.xaml" then
-					---@type number
-					local hitChance = child:Child(1):VisualChild(1):Child(1):Child(1):Child(2):GetProperty("Children")[1]:GetProperty("Children")[2]:GetProperty("Child")
-						.DataContext:GetProperty("HitChanceDesc"):GetProperty("TotalHitChance")
-					
-						local textNode = child:VisualChild(1):VisualChild(1):VisualChild(1):VisualChild(1):VisualChild(1):VisualChild(1):VisualChild(2):VisualChild(1):VisualChild(2)
-						:VisualChild(1)
-						_D(textNode:GetProperty("Name"))
+local childPath = {}
 
-					if (textNode:GetProperty("Name") == "hitChanceText") then
-						textNode:SetProperty("Text", ("D%s"):format(tostring(hitChance > 0 and math.floor((20 - (20 * (hitChance / 100))) + 0.5) or 20)))
-					end
+---@param parent NoesisBaseComponent
+local function recursiveFindForHitChance(parent)
+	local success, name = pcall(function(...)
+		return parent:GetProperty("Name")
+	end)
 
-					break
+	if success and name == "hitChanceText" then
+		return parent
+	else
+		local success, childrenCount = pcall(function(...)
+			return parent.VisualChildrenCount
+		end)
+		if success and childrenCount then
+			for i = 1, childrenCount do
+				local node = recursiveFindForHitChance(parent:VisualChild(i))
+				if node then
+					table.insert(childPath, 1, i)
+					return node
 				end
 			end
-		end, component.Cast)
-	end  
+		end
+	end
 end
 
-Ext.Entity.OnCreateDeferred("SpellCastIsCasting", onSpellCast)
+local haveLogged = false
+local tickSub
+Channels.FireAway:SetHandler(function(_, _)
+	tickSub = Ext.Events.Tick:Subscribe(function(e)
+		local parentNode = Ext.UI.GetRoot():Child(1):Child(1)
+
+		-- Noesis nodes have a lifetime that expires every tick, and mods can overwrite the Cursor.xaml
+		-- so we can't hardcode a path
+		local hitNode
+		if next(childPath) then
+			for _, visualChildIndex in ipairs(childPath) do
+				parentNode = parentNode:VisualChild(visualChildIndex)
+			end
+			hitNode = parentNode
+		else
+			hitNode = recursiveFindForHitChance(parentNode)
+		end
+
+		if hitNode then
+			local dataContext = hitNode:GetProperty("DataContext"):GetAllProperties()
+
+			if dataContext.ActiveTask:GetProperty("RootCastSpell") then
+				local hitChanceNode = dataContext.HitChanceDesc:GetAllProperties()
+
+				local castSpellProperties = dataContext.ActiveTask:GetProperty("RootCastSpell"):GetAllProperties()
+
+				if hitChanceNode.ShowDescription then
+					local isSingleTargetShout = (castSpellProperties.TargetingType == "Shout" and castSpellProperties.MaxTargets == 1)
+					if (hitNode:GetProperty("Name") == "hitChanceText") then
+						local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
+						hitNode:SetProperty("Text",
+							("DC: %s"):format(tostring(hitChance > 0 and math.floor(math.max(isSingleTargetShout and 1 or 2, (20 - (20 * (hitChance / 100))) + 1) or 20))))
+					end
+				end
+			elseif tickSub then
+				Ext.Events.Tick:Unsubscribe(tickSub)
+				tickSub = nil
+			end
+		else
+			if not haveLogged then
+				haveLogged = true
+				Logger:BasicError("Couldn't locate the hitChanceText node? Report to Osirisofinternet with all your mods that affect the UI")
+			end
+			if tickSub then
+				Ext.Events.Tick:Unsubscribe(tickSub)
+				tickSub = nil
+			end
+		end
+	end)
+end)
