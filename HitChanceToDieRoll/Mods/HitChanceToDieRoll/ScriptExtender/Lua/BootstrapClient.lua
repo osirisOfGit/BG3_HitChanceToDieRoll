@@ -30,6 +30,8 @@ local function recursiveFindForHitChance(parent)
 	end
 end
 
+local showPercentage = false
+
 local haveLogged = false
 local tickSub
 Channels.FireAway:SetHandler(function(_, _)
@@ -57,11 +59,24 @@ Channels.FireAway:SetHandler(function(_, _)
 				if hitChanceNode.ShowDescription then
 					if (hitNode:GetProperty("Name") == "hitChanceText") then
 						if hitChanceNode.TotalHitChance == 100 then
-							hitNode:SetProperty("Text", ("DC: %s"):format(tostring(0)))
+							if showPercentage then
+								hitNode:SetProperty("Text", ("%s%%"):format(tostring(100)))
+							else
+								hitNode:SetProperty("Text", ("DC: %s"):format(tostring(0)))
+							end
 						else
-							local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
-							hitNode:SetProperty("Text",
-								("DC: %s"):format(tostring(hitChance > 0 and math.floor(math.max( 2, (20 - (20 * (hitChance / 100))) + 1)))))
+							if showPercentage then
+								hitNode:SetProperty("Text", ("%s%%"):format(hitChanceNode.TotalHitChance))
+							else
+								---@type SpellData
+								local spellData = Ext.Stats.Get(dataContext.ActiveTask.RootCastSpell.PrototypeID)
+								local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
+								local dc = hitChance > 0 and math.floor(math.max(2, (20 - (20 * (hitChance / 100))) + 1)) or 20
+								if spellData.TooltipAttackSave and Ext.Enums.AbilityId[spellData.TooltipAttackSave] then
+									dc = 20 - (dc - 1)
+								end
+								hitNode:SetProperty("Text", ("DC: %s"):format(dc))
+							end
 						end
 					end
 				end
@@ -81,3 +96,15 @@ Channels.FireAway:SetHandler(function(_, _)
 		end
 	end)
 end)
+
+--- Thanks Scribe!
+Ext.Events.KeyInput:Subscribe(
+---@param e EclLuaKeyInputEvent
+	function(e)
+		if e.Event == "KeyDown" and e.Repeat == false then
+			local lshift, lalt = Ext.Enums.SDLKeyModifier.LShift, Ext.Enums.SDLKeyModifier.LAlt
+			if e.Key == "P" and e.Modifiers & lshift == lshift and e.Modifiers & lalt == lalt then
+				showPercentage = not showPercentage
+			end
+		end
+	end)
