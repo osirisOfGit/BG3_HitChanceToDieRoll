@@ -1,0 +1,18 @@
+<ls:UIWidget xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:System="clr-namespace:System;assembly=mscorlib"
+	xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:ls="clr-namespace:ls;assembly=Code"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions" x:Name="ActiveRollsOverhead" d:DataContext="{d:DesignInstance {x:Type ls:DCOverheads}, IsDesignTimeCreatable=True}" d:DesignHeight="2160" d:DesignWidth="3840" ls:UIWidget.ContextName="Overheads" Template="{StaticResource Hud.Root}" mc:Ignorable="d">
+
+	<ls:UIWidget.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="/Core;component/Library/OverheadPassives.xaml" />
+				<ResourceDictionary Source="/Core;component/Library/WorldTextTemplates.xaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</ls:UIWidget.Resources>
+</ls:UIWidget>

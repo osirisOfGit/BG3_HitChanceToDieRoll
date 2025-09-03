@@ -1,0 +1,12 @@
+<ls:StateMachine xmlns:ls="clr-namespace:ls;assembly=Code"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<ls:StateMachine.States>
+		<ls:State Name = "OverheadInfo" ModType="Extend">
+			<ls:State.Widgets>
+				<ls:StateWidget Filename="ActiveRollsOverhead.xaml" Layer="HUD"/>
+			</ls:State.Widgets>
+		</ls:State>
+	</ls:StateMachine.States>
+</ls:StateMachine>
