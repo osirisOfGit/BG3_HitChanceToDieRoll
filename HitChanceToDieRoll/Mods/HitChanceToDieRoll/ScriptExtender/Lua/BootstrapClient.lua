@@ -37,9 +37,20 @@ local alreadyChanged = false
 local tickSub
 Channels.FireAway:SetHandler(function(_, _)
 	local isSavingThrow
+	if tickSub then
+		return
+	end
 	tickSub = Ext.Events.Tick:Subscribe(function(e)
 		local success, error = xpcall(function(...)
 			local parentNode = Ext.UI.GetRoot():Child(1):Child(1)
+
+			if not parentNode then
+				if tickSub then
+					Ext.Events.Tick:Unsubscribe(tickSub)
+					tickSub = nil
+				end
+				return
+			end
 
 			-- Noesis nodes have a lifetime that expires every tick, and mods can overwrite the Cursor.xaml
 			-- so we can't hardcode a path
@@ -54,25 +65,23 @@ Channels.FireAway:SetHandler(function(_, _)
 			end
 
 			if hitNode then
-				local dataContext = hitNode:GetProperty("DataContext"):GetAllProperties()
+				local dataContext = hitNode:GetProperty("DataContext")
 
-				if dataContext.ActiveTask.PreviewType == "Spell" then
-					local hitChanceNode = dataContext.HitChanceDesc:GetAllProperties()
-
-					if hitChanceNode.ShowDescription then
+				if dataContext:GetProperty("ActiveTask").PreviewType == "Spell" then
+					if dataContext.HitChanceDesc:GetProperty("ShowDescription") then
 						if not alreadyChanged then
 							alreadyChanged = true
 
-							if hitChanceNode.TotalHitChance == 100 then
+							local totalHitChance = dataContext.HitChanceDesc:GetProperty("TotalHitChance")
+							if totalHitChance == 100 then
 								if showPercentage then
 									hitNode:SetProperty("Text", ("%s%%"):format(tostring(100)))
 								else
 									hitNode:SetProperty("Text", ("DC: %s"):format(tostring(0)))
 								end
 							else
-								hitNode.Foreground:SetProperty("Color", { 1, 0, 0, 1 })
 								if showPercentage then
-									hitNode:SetProperty("Text", ("%s%%"):format(hitChanceNode.TotalHitChance))
+									hitNode:SetProperty("Text", ("%s%%"):format(totalHitChance))
 								else
 									if isSavingThrow == nil and dataContext.ActiveTask.RootCastSpell then
 										---@type SpellData
@@ -82,9 +91,9 @@ Channels.FireAway:SetHandler(function(_, _)
 
 									local dc
 									if isSavingThrow then
-										dc = math.ceil(20 * (hitChanceNode.TotalHitChance / 100)) + 1
+										dc = math.ceil(20 * (totalHitChance / 100)) + 1
 									else
-										local hitChance = math.ceil(hitChanceNode.TotalHitChance / 5) * 5
+										local hitChance = math.ceil(totalHitChance / 5) * 5
 										dc = hitChance > 0 and math.floor(math.max(2, (20 - (20 * (hitChance / 100))) + 1)) or 20
 									end
 									hitNode:SetProperty("Text", ("DC: %s"):format(dc))
