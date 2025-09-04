@@ -44,19 +44,18 @@ Channels.FireAway:SetHandler(function(_, _)
 		local success, error = xpcall(function(...)
 			local parentNode = Ext.UI.GetRoot():Child(1):Child(1)
 
-			if not parentNode then
-				if tickSub then
-					Ext.Events.Tick:Unsubscribe(tickSub)
-					tickSub = nil
-				end
-				return
-			end
-
 			-- Noesis nodes have a lifetime that expires every tick, and mods can overwrite the Cursor.xaml
 			-- so we can't hardcode a path
 			local hitNode
 			if next(childPath) then
 				for _, visualChildIndex in ipairs(childPath) do
+					if not parentNode then
+						if tickSub then
+							Ext.Events.Tick:Unsubscribe(tickSub)
+							tickSub = nil
+						end
+						return
+					end
 					parentNode = parentNode:VisualChild(visualChildIndex)
 				end
 				hitNode = parentNode
